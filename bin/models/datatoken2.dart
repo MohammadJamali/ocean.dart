@@ -1,7 +1,19 @@
-import 'dart:typed_data';
+import 'package:web3dart/web3dart.dart';
+
+import '../ocean/util.dart';
+import '../web3_internal/constants.dart';
+import '../web3_internal/contract_base.dart';
+import 'datatoken_base.dart';
 
 class Datatoken2 extends DatatokenBase {
-  static const String CONTRACT_NAME = "ERC20TemplateEnterprise";
+  Datatoken2(
+    Map<String, dynamic> configDict,
+    EthereumAddress address,
+  ) : super(
+          contractName: "ERC20TemplateEnterprise",
+          configDict: configDict,
+          address: address,
+        );
 
   String buyDtAndOrder(
     Map<String, dynamic> providerFees,
@@ -14,20 +26,13 @@ class Datatoken2 extends DatatokenBase {
     dynamic consumeMarketSwapFeeAmount = 0,
     String consumeMarketSwapFeeAddress = ZERO_ADDRESS,
   }) {
-    if (consumer == null) {
-      consumer = getFromAddress(txDict);
-    }
+    consumer ??= getFromAddress(txDict);
 
     List exchanges = getExchanges();
-    assert(exchanges.isNotEmpty, "there are no fixed rate exchanges for this datatoken");
+    assert(exchanges.isNotEmpty,
+        "there are no fixed rate exchanges for this datatoken");
 
-    // import now, to avoid circular import
-    from ocean_lib.models.fixed_rate_exchange import OneExchange;
-
-    if (consumeMarketFees == null) {
-      consumeMarketFees = TokenFeeInfo();
-    }
-
+    consumeMarketFees ??= TokenFeeInfo();
     if (maxBaseTokenAmount == null) {
       var amtNeeded = exchange.BTNeeded(toWei(1), consumeMarketFees.amount);
       maxBaseTokenAmount = amtNeeded;
@@ -67,13 +72,9 @@ class Datatoken2 extends DatatokenBase {
     int serviceIndex = 1,
     dynamic consumeMarketFees,
   }) {
-    if (consumeMarketFees == null) {
-      consumeMarketFees = TokenFeeInfo();
-    }
+    consumeMarketFees ??= TokenFeeInfo();
 
-    if (consumer == null) {
-      consumer = getFromAddress(txDict);
-    }
+    consumer ??= getFromAddress(txDict);
 
     List dispensers = getDispensers();
     assert(dispensers.isNotEmpty, "there are no dispensers for this datatoken");

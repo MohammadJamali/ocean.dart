@@ -2,16 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 
+import '../models/exception/data_provider_exception.dart';
+import '../models/exception/invalid_url_exception.dart';
+import '../utils/logger.dart';
 import '../web3_internal/clef.dart';
+import '../web3_internal/utils.dart';
 
 class DataServiceProviderBase {
-  final http.Client _httpClient = http.Client();
-  var providerInfo;
-
-  http.Client getHttpClient() {
-    return _httpClient;
-  }
-
   (int, String) signMessage(wallet, String msg, String providerUri) {
     var (path, url) = buildEndpoint("nonce", providerUri);
     var nonceResponse = _httpMethod(
@@ -44,36 +41,8 @@ class DataServiceProviderBase {
     return _removeSlash(configDict['PROVIDER_URL']);
   }
 
-  (String, String) buildEndpoint(String path, String providerUri) {
-    var uri = Uri.parse(providerUri);
-    var url = Uri(
-      scheme: uri.scheme,
-      host: uri.host,
-      port: uri.port,
-      path: '${uri.path}/$path',
-    );
-    return (path.toUpperCase(), url.toString());
-  }
-
-  dynamic _httpMethod(String method,
-      {String? url, Map<String, dynamic>? params}) {
-    var response;
-    switch (method) {
-      case 'GET':
-        response = _httpClient.get(Uri.parse(url!));
-        break;
-      // Add more cases for other HTTP methods if needed
-    }
-    return response;
-  }
-
   String _removeSlash(String? input) {
     return input?.replaceAll(RegExp(r'/+$'), '') ?? '';
-  }
-
-  Map<String, List<String>> getServiceEndpoints(String providerUri) {
-    var providerInfo = _httpMethod('GET', url: providerUri).json();
-    return providerInfo['serviceEndpoints'].cast<String, List<String>>();
   }
 
   String? getC2DEnvironments(String providerUri, int chainId) {
@@ -83,7 +52,7 @@ class DataServiceProviderBase {
       var environments = _httpMethod(path, url: url).json();
 
       if (!environments.containsKey('$chainId')) {
-        logger.warning(
+        logger.w(
             'You might be using an older provider. ocean.py can not verify the chain id.');
         return environments.toString();
       }
@@ -101,7 +70,7 @@ class DataServiceProviderBase {
       var providerInfo = _httpMethod('GET', url: providerUri).json();
 
       if (providerInfo.containsKey('providerAddress')) {
-        logger.warning(
+        logger.w(
             'You might be using an older provider. ocean.py can not verify the chain id.');
         return providerInfo['providerAddress'];
       }
@@ -125,7 +94,7 @@ class DataServiceProviderBase {
     var parts = providerUri.split('/');
 
     if (parts.length < 2) {
-      throw InvalidURL('InvalidURL $serviceEndpoint.');
+      throw InvalidUrlException('InvalidURL $serviceEndpoint.');
     }
 
     if (parts[parts.length - 2] == 'services') {
@@ -135,7 +104,7 @@ class DataServiceProviderBase {
     var result = _removeSlash(providerUri);
 
     if (result.isEmpty) {
-      throw InvalidURL('InvalidURL $serviceEndpoint.');
+      throw InvalidUrlException('InvalidURL $serviceEndpoint.');
     }
 
     try {
@@ -144,15 +113,15 @@ class DataServiceProviderBase {
 
       if (!response.containsKey('providerAddresses')) {
         if (response.containsKey('providerAddress')) {
-          logger.warning(
+          logger.w(
               'You might be using an older provider. ocean.py can not verify the chain id.');
         } else {
-          throw InvalidURL(
+          throw InvalidUrlException(
               'Invalid Provider URL $serviceEndpoint, no providerAddresses.');
         }
       }
     } catch (e) {
-      throw InvalidURL('InvalidURL $serviceEndpoint.');
+      throw InvalidUrlException('InvalidURL $serviceEndpoint.');
     }
 
     return result;
@@ -167,13 +136,44 @@ class DataServiceProviderBase {
     return true;
   }
 
-  (String, String) buildEndpoint(String serviceName, String providerUri,
-      {Map<String, dynamic>? params}) {
-    providerUri = getRootUri(providerUri);
-    var serviceEndpoints = getServiceEndpoints(providerUri);
+  // (String, String) buildEndpoint(String path, String providerUri) {
+  //   var uri = Uri.parse(providerUri);
+  //   var url = Uri(
+  //     scheme: uri.scheme,
+  //     host: uri.host,
+  //     port: uri.port,
+  //     path: '${uri.path}/$path',
+  //   );
+  //   return (path.toUpperCase(), url.toString());
+  // }
 
-    var method = serviceEndpoints[serviceName]!.item1;
-    var url = Uri.parse(serviceEndpoints[serviceName]!.item2);
+  Future<Map<String, dynamic>?> getJson(String url) async {
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        logger.d('Failed to load data. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      logger.d('Error: $e');
+    }
+    return null;
+  }
+
+  Future<(String, String)> buildEndpoint(
+    String serviceName,
+    String providerUri, {
+    Map<String, dynamic>? params,
+  }) async {
+    providerUri = getRootUri(providerUri);
+
+    final http = HttpClient();
+    final providerInfo = await getJson(providerUri);
+
+    var method = providerInfo[serviceName]!.item1;
+    var url = Uri.parse(providerInfo[serviceName]!.item2);
     url = Uri(
       scheme: url.scheme,
       host: url.host,
@@ -224,8 +224,11 @@ class DataServiceProviderBase {
     }
   }
 
-  dynamic _httpMethod(String method,
-      {String? url, Map<String, dynamic>? params}) {
+  dynamic _httpMethod(
+    String method, {
+    String? url,
+    Map<String, dynamic>? params,
+  }) {
     var response;
     switch (method) {
       case 'GET':
@@ -251,8 +254,13 @@ class DataServiceProviderBase {
   }
 
   void checkResponse(
-      response, String endpointName, String endpoint, dynamic payload,
-      {List<int>? successCodes, Type exceptionType = DataProviderException}) {
+    response,
+    String endpointName,
+    String endpoint,
+    dynamic payload, {
+    List<int>? successCodes,
+    Type exceptionType = DataProviderException,
+  }) {
     if (response == null ||
         response is! http.Response ||
         response.statusCode == null) {

@@ -1,4 +1,6 @@
-import 'dart:typed_data';
+import '../ocean/util.dart';
+import '../web3_internal/constants.dart';
+import 'datatoken_base.dart';
 
 class ExchangeArguments {
   late int rate;

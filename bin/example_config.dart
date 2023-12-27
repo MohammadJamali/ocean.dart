@@ -1,15 +1,8 @@
-import 'dart:collection';
-import 'dart:convert';
 import 'dart:io';
-
-import 'package:enforce_typing/enforce_typing.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
 import 'package:path/path.dart' as path;
 import 'package:path/path.dart';
-
-class Web3 {
-  // You might need to add the necessary imports and implementations.
-}
+import 'package:web3dart/web3dart.dart';
 
 class ConfigDefaults {
   static const DEFAULT_METADATA_CACHE_URI = "http://172.15.0.5:5000";
@@ -55,19 +48,15 @@ class NamePerNetwork {
   };
 }
 
-@enforce_types
-class ConfigDict extends LinkedHashMap<String, dynamic> {
-  ConfigDict(Map<String, dynamic> other) : super.from(other);
-}
-
-ConfigDict getNetworkConfig(String networkUrl) {
+Future<Map<String, dynamic>> getOceanConfig(String networkUrl) async {
   if (networkUrl.isEmpty) {
     networkUrl = "http://localhost:8545";
   }
 
-  final configDict = ConfigDict.from(ConfigDefaults.configDefaults);
-  configDict["web3_instance"] = getWeb3(networkUrl);
-  configDict["CHAIN_ID"] = configDict["web3_instance"].eth.chainId;
+  final configDict = Map<String, dynamic>.from(ConfigDefaults.configDefaults);
+  final client = getWeb3(networkUrl);
+  configDict["web3_instance"] = client;
+  configDict["CHAIN_ID"] = await client.getNetworkId();
 
   final chainId = configDict["CHAIN_ID"];
   if (!ProviderPerNetwork.providerPerNetwork.containsKey(chainId)) {
@@ -89,7 +78,7 @@ ConfigDict getNetworkConfig(String networkUrl) {
         "Could not find address_file=$addressFile.");
     configDict["ADDRESS_FILE"] = addressFile;
   } else if (chainId == 8996) {
-    final baseFile = "~/.ocean/ocean-contracts/artifacts/address.json";
+    final baseFile = "assets/address.json";
     final addressFile = File(path.normalize(baseFile)).absolute.path;
     assert(File(addressFile).existsSync(),
         "Could not find address_file=$addressFile.");
@@ -100,8 +89,7 @@ ConfigDict getNetworkConfig(String networkUrl) {
           .parent
           .path,
       "..",
-      "lib",
-      "addresses",
+      "assets",
       "address.json",
     ))).absolute.path;
     assert(File(addressFile).existsSync(),
@@ -112,17 +100,4 @@ ConfigDict getNetworkConfig(String networkUrl) {
   return configDict;
 }
 
-Web3 getWeb3(String networkUrl) {
-  final provider = getWeb3ConnectionProvider(networkUrl);
-  final web3 = Web3(provider);
-
-  try {
-    web3.eth.getBlock("latest");
-  } on ExtraDataLengthError {
-    web3.middlewareOnion.inject(gethPoaMiddleware, layer: 0);
-  }
-
-  web3.strictBytesTypeChecking = false;
-
-  return web3;
-}
+Web3Client getWeb3(String networkUrl) => Web3Client(networkUrl, Client());

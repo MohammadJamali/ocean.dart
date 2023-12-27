@@ -1,33 +1,45 @@
+import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:web3dart/web3dart.dart';
 import 'dart:convert';
 
+import '../utils/address.dart';
+import '../utils/logger.dart';
+import '../web3_internal/contract_utils.dart';
 
-const String ganacheUrl = "http://127.0.0.1:8545";
-
-String getAddressOfType(Map<String, dynamic> configDict, String addressType, [String? key]) {
-  final addresses = getContractsAddresses(configDict);
+String getAddressOfType(
+  Map<String, dynamic> configDict,
+  String addressType, [
+  String? key,
+]) {
+  final addresses = ContractUtils.getContractsAddresses(configDict);
   if (!addresses.containsKey(addressType)) {
-    throw KeyError("${addressType} address is not set in the config file");
+    throw ArgumentError("$addressType address is not set in the config file");
   }
   final address = addresses[addressType] is! Map
       ? addresses[addressType]
       : (addresses[addressType] as Map).containsKey(key)
-      ? addresses[addressType][key]
-      : addresses[addressType]["1"];
+          ? addresses[addressType][key]
+          : addresses[addressType]["1"];
+
   return EthereumAddress.fromHex(address.toLowerCase()).hex;
 }
 
-String getOceanTokenAddress(Map<String, dynamic> configDict) {
-  final addresses = getContractsAddresses(configDict);
+String? getOceanTokenAddress(
+  Map<String, dynamic> configDict,
+) {
+  final addresses = ContractUtils.getContractsAddresses(configDict);
   if (addresses.containsKey("Ocean")) {
-    return EthereumAddress.fromHex(addresses["Ocean"].toLowerCase()).hex;
+    return EthereumAddress.fromHex(addresses["Ocean"]!.toLowerCase()).hex;
   }
-  return "";
+  return null;
 }
 
 String createChecksum(String text) {
-  return Web3Utils.sha256(utf8.encode(text));
+  return bytesToHex(
+    Uint8List.fromList(sha256.convert(utf8.encode(text)).bytes),
+  );
 }
 
 double fromWei(BigInt amtWei) {
@@ -47,7 +59,8 @@ String getFromAddress(Map<String, dynamic> txDict) {
   return address;
 }
 
-T getArgsObject<T>(List args, Map<String, dynamic> kwargs, T Function(List, Map<String, dynamic>) argsClassConstructor) {
+T getArgsObject<T>(List args, Map<String, dynamic> kwargs,
+    T Function(List, Map<String, dynamic>) argsClassConstructor) {
   T? argsToUse;
   if (args.isNotEmpty && args[0] is T) {
     argsToUse = args[0] as T;
@@ -63,54 +76,83 @@ T getArgsObject<T>(List args, Map<String, dynamic> kwargs, T Function(List, Map<
   return argsToUse ?? argsClassConstructor(args, kwargs);
 }
 
-Future<TransactionReceipt> sendEther(
-    Map<String, dynamic> config, EthPrivateKey fromWallet, String toAddress,
-    dynamic amount, [int? priorityFee]) async {
+BigInt _feeHistoryPriorityFeeEstimate(Map<String, dynamic> feeHistory) {
+  final nonEmptyBlockFees = (feeHistory['reward'] as List<List<double>>)
+      .where((fee) => fee[0] != 0)
+      .map((fee) => fee[0])
+      .toList();
+
+  // prevent division by zero in the extremely unlikely case that all fees within
+  // the polled fee history range for the specified percentile are 0
+  int divisor = nonEmptyBlockFees.isNotEmpty ? nonEmptyBlockFees.length : 1;
+
+  final priorityFeeAverageForPercentile = BigInt.from(
+    (nonEmptyBlockFees.reduce((a, b) => a + b) / divisor).round(),
+  );
+
+  final priorityFeeMax = BigInt.from(1500000000); // 1.5 gwei
+  final priorityFeeMin = BigInt.from(1000000000); // 1 gwei
+
+  return
+      // keep estimated priority fee within a max / min range
+      priorityFeeAverageForPercentile > priorityFeeMax
+          ? priorityFeeMax
+          : priorityFeeAverageForPercentile < priorityFeeMin
+              ? priorityFeeMin
+              : priorityFeeAverageForPercentile;
+}
+
+Future<TransactionReceipt?> sendEther(
+  Map<String, dynamic> config,
+  EthPrivateKey fromWallet,
+  String toAddress,
+  dynamic amount, [
+  BigInt? priorityFee,
+]) async {
   final web3 = config['web3_instance'] as Web3Client;
   final chainId = await web3.getNetworkId();
-  if (!EthereumAddress.fromHex(toAddress).isChecksum) {
+  if (!isChecksumAddress(toAddress)) {
     toAddress = EthereumAddress.fromHex(toAddress).hexEip55;
   }
 
-  EthereumAddress to = EthereumAddress.fromHex(toAddress);
-  BigInt value = amount is int ? BigInt.from(amount) : toWei(amount as double);
+  final to = EthereumAddress.fromHex(toAddress);
+  final value = amount is int ? BigInt.from(amount) : toWei(amount as double);
+  final gas = await web3.estimateGas(
+    sender: fromWallet.address,
+    to: to,
+    value: EtherAmount.fromBigInt(EtherUnit.wei, amount),
+  );
 
-  var tx = {
-    "from": await fromWallet.extractAddress(),
-    "to": to,
-    "value": value,
-    "chainId": chainId,
-    "nonce": await web3.getTransactionCount(await fromWallet.extractAddress()),
-    "type": 2,
-    "maxPriorityFeePerGas": null,
-    "maxFeePerGas": null,
-  };
-
-  tx['gas'] = await web3.estimateGas(
-      sender: await fromWallet.extractAddress(), to: to, value: value);
-
-  if (priorityFee == null) {
-    priorityFee = (await web3.getMaxPriorityFeePerGas()).toInt();
+  try {
+    priorityFee ??= await web3.makeRPCCall('eth_maxPriorityFeePerGas');
+  } catch (e) {
+    logger.d("There was an issue with the method eth_maxPriorityFeePerGas. "
+        "Calculating using eth_feeHistory.");
+    priorityFee ??= _feeHistoryPriorityFeeEstimate(
+      await web3.getFeeHistory(10, rewardPercentiles: [5.0]),
+    );
   }
 
-  final baseFee = (await web3.getBlockWithTransactions('latest')).baseFeePerGas!;
-  tx['maxPriorityFeePerGas'] = BigInt.from(priorityFee);
-  tx['maxFeePerGas'] = baseFee * BigInt.two + BigInt.from(priorityFee);
+  final lastBlockInfo = await web3.getBlockInformation(blockNumber: 'latest');
+  final baseFee = lastBlockInfo.baseFeePerGas!;
+  final maxFeePerGas = baseFee.getInWei * BigInt.two + priorityFee!;
+  final nonce = await web3.getTransactionCount(fromWallet.address);
 
-  final signedTx = await fromWallet.signTransaction(
+  final signedTx = await web3.signTransaction(
+    fromWallet,
     Transaction(
-      from: await fromWallet.extractAddress(),
+      from: fromWallet.address,
       to: to,
-      maxGas: tx['gas'],
-      maxFeePerGas: tx['maxFeePerGas'],
-      maxPriorityFeePerGas: tx['maxPriorityFeePerGas'],
+      maxGas: gas.toInt(),
+      maxFeePerGas: EtherAmount.inWei(maxFeePerGas),
+      maxPriorityFeePerGas: EtherAmount.inWei(priorityFee),
       value: EtherAmount.inWei(value),
-      nonce: tx['nonce'],
+      nonce: nonce,
     ),
     chainId: chainId,
   );
 
   final txHash = await web3.sendRawTransaction(signedTx);
 
-  return web3.getTransactionReceipt(txHash);
+  return await web3.getTransactionReceipt(txHash);
 }

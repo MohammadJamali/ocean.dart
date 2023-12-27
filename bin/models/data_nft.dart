@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../ocean/util.dart';
 import '../web3_internal/constants.dart';
+import 'data_nft_factory.dart';
 
 part 'data_nft.freezed.dart';
 
@@ -99,10 +101,10 @@ extension DataNFTExtension on DataNFT {
   Future<DataNFT> deployContract(
       Map<String, dynamic> configDict, Map<String, dynamic> txDict) async {
     final address =
-        get_address_of_type(configDict, DataNFTFactoryContract.CONTRACT_NAME);
+        getAddressOfType(configDict, DataNFTFactoryContract.CONTRACT_NAME);
     final dataNFTFactory = DataNFTFactoryContract(configDict, address);
 
-    final walletAddress = get_from_address(txDict);
+    final walletAddress = getFromAddress(txDict);
 
     final receipt = await dataNFTFactory.deployERC721Contract(
       name,

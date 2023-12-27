@@ -15,8 +15,8 @@ String toSnakeCase(String input) {
 }
 
 class Service {
-  final String id;
-  final String type;
+  final String serviceId;
+  final String serviceType;
   final String? serviceEndpoint;
   final String? datatoken;
   dynamic files;
@@ -28,8 +28,8 @@ class Service {
   List<dynamic>? consumerParameters;
 
   Service({
-    required this.id,
-    required this.type,
+    required this.serviceId,
+    required this.serviceType,
     this.serviceEndpoint,
     this.datatoken,
     this.files,
@@ -56,17 +56,17 @@ class Service {
         'CLOUD_COMPUTE': 'DEFAULT_COMPUTE_NAME',
       };
 
-      if (serviceToDefaultName.containsKey(type)) {
-        name = serviceToDefaultName[type];
-        description = serviceToDefaultName[type];
+      if (serviceToDefaultName.containsKey(serviceType)) {
+        name = serviceToDefaultName[serviceType];
+        description = serviceToDefaultName[serviceType];
       }
     }
   }
 
   factory Service.fromJson(Map<String, dynamic> json) {
     return Service(
-      id: json['id'],
-      type: json['type'],
+      serviceId: json['id'],
+      serviceType: json['type'],
       serviceEndpoint: json['serviceEndpoint'],
       datatoken: json['datatokenAddress'],
       files: json['files'],
@@ -88,7 +88,7 @@ class Service {
   }
 
   List<dynamic> addPublisherTrustedAlgorithm(dynamic algoDdo) {
-    if (type != 'CLOUD_COMPUTE') {
+    if (serviceType != 'CLOUD_COMPUTE') {
       throw AssertionError('Service is not compute type');
     }
 
@@ -136,7 +136,7 @@ class Service {
 
     final values = <String, dynamic>{};
 
-    if (type == 'compute') {
+    if (serviceType == 'compute') {
       if (computeValues?.containsKey('compute') == true) {
         values.addAll(computeValues!);
       } else {
@@ -162,8 +162,8 @@ class Service {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'type': type,
+      'id': serviceId,
+      'type': serviceType,
       'serviceEndpoint': serviceEndpoint,
       'datatokenAddress': datatoken,
       'files': files,
@@ -228,24 +228,18 @@ class Service {
     bool allowNetworkAccess,
     bool allowRawAlgorithm,
   ) {
-    assert(
-        trustedAlgorithms.isEmpty ||
-            trustedAlgorithms is List<Map<String, dynamic>>,
+    assert(trustedAlgorithms.isEmpty,
         "trustedAlgorithms must be a list of dictionaries");
 
-    assert(type == ServiceTypes.CLOUD_COMPUTE,
+    assert(serviceType == ServiceTypes.CLOUD_COMPUTE,
         "this asset does not have a compute service.");
 
     for (var ta in trustedAlgorithms) {
-      assert(ta is Map<String, dynamic>,
-          "item in list of trustedAlgorithms must be a map");
       assert(ta.containsKey('did'),
           "dict in list of trustedAlgorithms is expected to have a `did` key");
     }
 
-    if (computeValues == null) {
-      computeValues = {};
-    }
+    computeValues ??= {};
 
     computeValues!['publisherTrustedAlgorithms'] = trustedAlgorithms;
     computeValues!['publisherTrustedAlgorithmPublishers'] =
@@ -270,5 +264,6 @@ class Service {
     }, serviceEndpoint!, chainId);
 
     files = utf8.decode(encryptResponse.bodyBytes);
+    return null;
   }
 }

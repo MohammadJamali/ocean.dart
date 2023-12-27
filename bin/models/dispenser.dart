@@ -1,8 +1,18 @@
+import 'package:web3dart/web3dart.dart';
+
+import '../ocean/util.dart';
 import '../web3_internal/constants.dart';
 import '../web3_internal/contract_base.dart';
 
 class Dispenser extends ContractBase {
-  static const String CONTRACT_NAME = 'Dispenser';
+  Dispenser(
+    Map<String, dynamic> configDict,
+    EthereumAddress address,
+  ) : super(
+          contractName: "Dispenser",
+          configDict: configDict,
+          address: address,
+        );
 }
 
 class DispenserArguments {
@@ -71,5 +81,5 @@ class DispenserStatus {
 }
 
 String _strWithWei(int xWei) {
-  return '${from_wei(xWei)} ($xWei wei)';
+  return '${fromWei(BigInt.from(xWei))} ($xWei wei)';
 }

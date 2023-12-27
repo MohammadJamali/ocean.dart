@@ -2,8 +2,17 @@ import 'dart:typed_data';
 
 import 'package:web3dart/web3dart.dart';
 
+import '../ocean/util.dart';
 import '../services/service.dart';
 import '../structures/file_objects.dart';
+import '../utils/logger.dart';
+import '../web3_internal/constants.dart';
+import '../web3_internal/contract_base.dart';
+import 'data_nft.dart';
+import 'datatoken1.dart';
+import 'datatoken2.dart';
+import 'dispenser.dart';
+import 'fixed_rate_exchange.dart';
 
 class TokenFeeInfo {
   String address;
@@ -11,8 +20,8 @@ class TokenFeeInfo {
   int amount;
 
   TokenFeeInfo({String? address, String? token, int? amount})
-      : address = address?.toLowerCase() ?? '0x0000000000000000000000000000000000000000',
-        token = token?.toLowerCase() ?? '0x0000000000000000000000000000000000000000',
+      : address = address?.toLowerCase() ?? ZERO_ADDRESS,
+        token = token?.toLowerCase() ?? ZERO_ADDRESS,
         amount = amount ?? 0;
 
   List<dynamic> toTuple() {
@@ -99,7 +108,7 @@ class DatatokenArguments {
 
     final datatoken = DatatokenBase.getTyped(configDict, newElements[0]);
 
-    logger.info('Successfully created datatoken with address ${datatoken.address}.');
+    logger.i('Successfully created datatoken with address ${datatoken.address}.');
 
     if (withServices) {
       services ??= [
@@ -124,10 +133,19 @@ class DatatokenRoles extends IntEnum {
 }
 
 class DatatokenBase extends ContractBase {
-  static const String CONTRACT_NAME = "ERC20Template";
   static const int BASE = 10^18;
   static const double BASE_COMMUNITY_FEE_PERCENTAGE = BASE / 1000;
   static const double BASE_MARKET_FEE_PERCENTAGE = BASE / 1000;
+
+  DatatokenBase({
+    String? contractName,
+  required  Map<String, dynamic> configDict,
+    required EthereumAddress address,
+  }) : super(
+          contractName: contractName ?? "ERC20Template",
+          configDict: configDict,
+          address: address,
+        );
 
   static DatatokenBase getTyped(Map<String, dynamic> config, String address) {
     final datatoken = Datatoken1(config, address);
@@ -141,11 +159,6 @@ class DatatokenBase extends ContractBase {
     return datatoken;
   }
 
-  @override
-  String getContractName() {
-    return CONTRACT_NAME;
-  }
-
   Future<String> startOrder(
     String consumer,
     int serviceIndex,
@@ -155,7 +168,7 @@ class DatatokenBase extends ContractBase {
   }) async {
     consumeMarketFees ??= TokenFeeInfo();
 
-    return startOrder(
+    return await startOrder(
       checksumAddr(consumer),
       serviceIndex,
       [
@@ -178,7 +191,7 @@ class DatatokenBase extends ContractBase {
     Map<String, dynamic> providerFees,
     Map<String, dynamic> txDict,
   ) async {
-    return reuseOrder(
+    return await reuseOrder(
       orderTxId,
       [
         checksumAddr(providerFees["providerFeeAddress"]),
@@ -194,11 +207,11 @@ class DatatokenBase extends ContractBase {
     );
   }
 
-  Tuple2<List<dynamic>> getStartOrderLogs({
+  Future<List> getStartOrderLogs({
     String? consumerAddress,
     int fromBlock = 0,
     dynamic toBlock = "latest",
-  }) {
+  }) async {
     final topic0 = getEventSignature("OrderStarted");
     var topics = [topic0];
     if (consumerAddress != null) {
@@ -206,8 +219,8 @@ class DatatokenBase extends ContractBase {
       topics = [topic0, topic1];
     }
 
-    final web3 = configDict["web3_instance"];
-    final eventFilter = web3.eth.filter(
+    final web3 = configDict["web3_instance"] as Web3Client;
+    final eventFilter = web3.filter(
       {
         "topics": topics,
         "toBlock": toBlock,
@@ -218,14 +231,14 @@ class DatatokenBase extends ContractBase {
     final orders = [];
 
     for (final log in eventFilter.getAllEntries()) {
-      final receipt = await web3.eth.waitForTransactionReceipt(log.transactionHash);
+      final receipt = await web3.getTransactionReceipt(log.transactionHash);
       final processedEvents = contract.events.OrderStarted().processReceipt(receipt, errors: DISCARD);
       for (final processedEvent in processedEvents) {
         orders.add(processedEvent);
       }
     }
 
-    return Tuple2<List<dynamic>>(orders);
+    return orders;
   }
 
   Future<dynamic> createExchange(Map<String, dynamic> txDict, [List<dynamic>? args, Map<String, dynamic>? kwargs]) async {
@@ -239,7 +252,7 @@ class DatatokenBase extends ContractBase {
     final FRE = _FRE();
     final exchange = OneExchange(FRE, exchangeId);
 
-    return kwargs != null && kwargs["fullInfo"] ? Tuple2<OneExchange, dynamic>(exchange, tx) : exchange;
+    return kwargs != null && kwargs["fullInfo"] ? (exchange, tx) : exchange;
   }
 
   List<dynamic> getExchanges({bool onlyActive = true}) {

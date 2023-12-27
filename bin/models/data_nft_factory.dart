@@ -1,7 +1,24 @@
 import 'dart:typed_data';
 
+import 'package:http/http.dart';
+import 'package:web3dart/web3dart.dart';
+
+import '../structures/abi_tuples/order_data.dart';
+import '../structures/abi_tuples/reuse_order_data.dart';
+import '../web3_internal/contract_base.dart';
+import 'data_nft.dart';
+import 'datatoken_base.dart';
+import 'erc721_token_factory_base.dart';
+
 class DataNFTFactoryContract extends ERC721TokenFactoryBase {
-  static const CONTRACT_NAME = "ERC721Factory";
+  DataNFTFactoryContract(
+    Map<String, dynamic> configDict,
+    EthereumAddress address,
+  ) : super(
+          contractName: "ERC721Factory",
+          configDict: configDict,
+          address: address,
+        );
 
   @override
   bool verifyNFT(String nftAddress) {
@@ -59,7 +76,7 @@ class DataNFTFactoryContract extends ERC721TokenFactoryBase {
   @override
   String createWithERC20(
       dataNFTArgs, datatokenArgs, Map<String, dynamic> txDict) {
-    String walletAddress = getFromAddress(txDict);
+    String walletAddress = get(txDict);
     var receipt = createNftWithErc20(
       [
         dataNFTArgs.name,

@@ -48,7 +48,7 @@ class ContractUtils {
     return json.decode(jsonString);
   }
 
-  static Map<String, String> getContractsAddresses(
+  static Map<String, dynamic> getContractsAddresses(
     Map<String, dynamic> config,
   ) {
     final networkName = config['NETWORK_NAME'];
@@ -62,23 +62,23 @@ class ContractUtils {
     return _checksumContractAddresses(networkAddresses);
   }
 
-  static Map<String, String> _checksumContractAddresses(
+  static Map<String, dynamic> _checksumContractAddresses(
     Map<String, dynamic> networkAddresses,
   ) {
-    networkAddresses.forEach((key, value) {
-      if (key == 'chainId') return;
-      if (value is int) return;
+    for (var element in networkAddresses.entries) {
+      if (element.key == 'chainId') continue;
+      if (element.value is int) continue;
 
-      if (value is Map<String, dynamic>) {
-        value.forEach((k, v) {
-          value[k] = EthereumAddress.fromHex(v.toLowerCase()).hex;
+      if (element.value is Map<String, dynamic>) {
+        element.value.forEach((k, v) {
+          element.value[k] = EthereumAddress.fromHex(v.toLowerCase()).hex;
         });
       } else {
-        networkAddresses[key] =
-            EthereumAddress.fromHex(value.toLowerCase()).hex;
+        networkAddresses[element.key] =
+            EthereumAddress.fromHex(element.value.toLowerCase()).hex;
       }
-    });
+    }
 
-    return networkAddresses.cast<String, String>();
+    return networkAddresses;
   }
 }

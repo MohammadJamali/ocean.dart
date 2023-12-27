@@ -1,16 +1,27 @@
 import 'dart:convert';
-import 'package:logging/logging.dart';
 
+import 'package:web3dart/web3dart.dart';
+
+import '../assets/ddo/ddo.dart';
+import '../data_provider/data_service_provider.dart';
+import '../models/compute_input.dart';
+import '../models/data_nft.dart';
+import '../models/data_nft_factory.dart';
+import '../models/datatoken_base.dart';
+import '../models/dispenser.dart';
+import '../models/factory_router.dart';
+import '../models/fixed_rate_exchange.dart';
 import '../models/models.dart';
-
-// Import other required libraries and dependencies
+import '../services/service.dart';
+import '../utils/logger.dart';
+import 'ocean_assets/ocean_assets.dart';
+import 'ocean_compute.dart' as ocompute;
+import 'util.dart';
 
 class Ocean {
   final Map<String, dynamic> configDict;
   OceanAssets assets;
-  OceanCompute compute;
-
-  static final Logger _logger = Logger('ocean');
+  ocompute.OceanCompute compute;
 
   // Initialize Ocean class.
   // Usage: Make a new Ocean instance
@@ -35,18 +46,13 @@ class Ocean {
   //
   // :param config_dict: variable definitions
   // :param data_provider: `DataServiceProvider` instance
-  Ocean(this.configDict, [Type dataProvider]) {
-
+  Ocean(this.configDict) {
     _validateConfig();
 
-    if (dataProvider == null) {
-      dataProvider = DataServiceProvider; // Assuming DataServiceProvider is defined somewhere
-    }
-
     assets = OceanAssets(configDict, dataProvider);
-    compute = OceanCompute(configDict, dataProvider);
+    compute = ocompute.OceanCompute(configDict, dataProvider);
 
-    _logger.fine('Ocean instance initialized');
+    logger.d('Ocean instance initialized');
   }
 
   void _validateConfig() {
@@ -65,7 +71,8 @@ class Ocean {
     }
   }
 
-  String get OCEANAddress => getOceanTokenAddress(configDict); // Assuming getOceanTokenAddress is defined
+  String get oceanAddress => getOceanTokenAddress(configDict);
+  DatatokenBase get oceanToken => getDatatoken(oceanAddress);
 
   // Translate other properties and methods
   DataNFTFactoryContract get dataNFTFactory {
@@ -109,13 +116,25 @@ class Ocean {
     return orders;
   }
 
-  Map<String, dynamic> retrieveProviderFees(DDO ddo, Service accessService, dynamic publisherWallet) {
-    var initializeResponse = DataServiceProvider.initialize(ddo.did, accessService, consumerAddress: publisherWallet.address);
-    var initializeData = jsonDecode(initializeResponse); // Assuming initializeResponse is a JSON string
+  Map<String, dynamic> retrieveProviderFees(
+    DDO ddo,
+    Service accessService,
+    dynamic publisherWallet,
+  ) {
+    var initializeResponse = DataServiceProvider.initialize(
+        ddo.did, accessService,
+        consumerAddress: publisherWallet.address);
+    var initializeData = jsonDecode(
+        initializeResponse); // Assuming initializeResponse is a JSON string
     return initializeData["providerFee"];
   }
 
-  Map<String, dynamic> retrieveProviderFeesForCompute(List<ComputeInput> datasets, dynamic algorithmData, String consumerAddress, String computeEnvironment, int validUntil) {
+  Map<String, dynamic> retrieveProviderFeesForCompute(
+      List<ComputeInput> datasets,
+      dynamic algorithmData,
+      String consumerAddress,
+      String computeEnvironment,
+      int validUntil) {
     var initializeComputeResponse = DataServiceProvider.initializeCompute(
       datasets.map((e) => e.asDictionary()).toList(),
       algorithmData.asDictionary(),
@@ -124,7 +143,8 @@ class Ocean {
       computeEnvironment,
       validUntil,
     );
-    return jsonDecode(initializeComputeResponse); // Assuming initializeComputeResponse is a JSON string
+    return jsonDecode(
+        initializeComputeResponse); // Assuming initializeComputeResponse is a JSON string
   }
 
   DFRewards get dfRewards {
@@ -164,10 +184,11 @@ class Ocean {
   Map<String, dynamic> get configDict => configDict;
 
   String _addr(String typeStr) {
-    return getAddressOfType(configDict, typeStr); // Assuming getAddressOfType is defined
+    return getAddressOfType(
+        configDict, typeStr); // Assuming getAddressOfType is defined
   }
 
-  dynamic walletBalance(dynamic w) {
-    return configDict['web3_instance'].eth.getBalance(w.address); // Assuming web3_instance is a valid object
+  dynamic walletBalance(Wallet w) {
+    return (configDict['web3_instance'] as Web3Client).getBalance(w.address);
   }
 }

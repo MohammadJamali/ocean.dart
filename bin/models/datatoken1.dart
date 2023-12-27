@@ -1,3 +1,9 @@
+import '../ocean/util.dart';
+import '../web3_internal/constants.dart';
+import '../web3_internal/contract_base.dart';
+import 'datatoken_base.dart';
+import 'fixed_rate_exchange.dart';
+
 class Datatoken1 extends DatatokenBase {
   static const CONTRACT_NAME = "ERC20Template";
 
@@ -5,20 +11,15 @@ class Datatoken1 extends DatatokenBase {
   static const BASE_COMMUNITY_FEE_PERCENTAGE = BASE / 1000;
   static const BASE_MARKET_FEE_PERCENTAGE = BASE / 1000;
 
-  String dispenseAndOrder(
+  Future<String> dispenseAndOrder(
     Map<String, dynamic> providerFees,
     Map<String, dynamic> txDict, {
     String? consumer,
     int serviceIndex = 1,
     dynamic consumeMarketFees,
-  }) {
-    if (consumer == null) {
-      consumer = getFromAddress(txDict);
-    }
-
-    if (consumeMarketFees == null) {
-      consumeMarketFees = TokenFeeInfo();
-    }
+  }) async {
+    consumer ??= getFromAddress(txDict);
+    consumeMarketFees ??= TokenFeeInfo();
 
     String buyerAddr = getFromAddress(txDict);
 
@@ -43,7 +44,7 @@ class Datatoken1 extends DatatokenBase {
       dispenser.dispense(address, toWei(1), buyerAddr, txDict);
     }
 
-    return startOrder(
+    return await startOrder(
       consumer: ContractBase.toChecksumAddress(consumer),
       serviceIndex: serviceIndex,
       providerFees: providerFees,
@@ -52,29 +53,22 @@ class Datatoken1 extends DatatokenBase {
     );
   }
 
-  String buyDtAndOrder(
+  Future<String> buyDtAndOrder(
     Map<String, dynamic> providerFees,
     dynamic exchange,
     Map<String, dynamic> txDict, {
     String? consumer,
     int serviceIndex = 1,
     dynamic consumeMarketFees,
-  }) {
-    if (consumer == null) {
-      consumer = getFromAddress(txDict);
-    }
+  }) async {
+    consumer ??= getFromAddress(txDict);
 
     List exchanges = getExchanges();
     assert(exchanges.isNotEmpty, "there are no fixed rate exchanges for this datatoken");
 
-    // import now, to avoid circular import
-    from ocean_lib.models.fixed_rate_exchange import OneExchange;
+    consumeMarketFees ??= TokenFeeInfo();
 
-    if (consumeMarketFees == null) {
-      consumeMarketFees = TokenFeeInfo();
-    }
-
-    if (!(exchange is OneExchange)) {
+    if (exchange is! OneExchange) {
       exchange = exchanges[0];
     }
 
@@ -85,7 +79,7 @@ class Datatoken1 extends DatatokenBase {
       txDict: txDict,
     );
 
-    return startOrder(
+    return await startOrder(
       consumer: ContractBase.toChecksumAddress(consumer),
       serviceIndex: serviceIndex,
       providerFees: providerFees,

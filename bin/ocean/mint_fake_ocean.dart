@@ -4,11 +4,12 @@ import 'package:web3dart/web3dart.dart'; // Assuming you are using a Web3 Dart l
 
 Future<void> mintFakeOCEAN(Map<String, dynamic> config) async {
   final deployerWallet = EthPrivateKey.fromHex(
-      '0x${Platform.environment['FACTORY_DEPLOYER_PRIVATE_KEY']!}');
+      '0xc594c6e5def4bab63ac29eed19a134c130388f74f019bc74b8f4389df2837a58');
 
   final oceanTokenAddress = getOceanTokenAddress(config);
   final oceanToken = DatatokenBase.getType(config, address: oceanTokenAddress);
-  final amtDistribute = EtherAmount.fromUnitAndValue(EtherUnit.wei, BigInt.from(2000));
+  final amtDistribute =
+      EtherAmount.fromUnitAndValue(EtherUnit.wei, BigInt.from(2000));
 
   await oceanToken.mint(
     deployerWallet.address,
@@ -16,7 +17,11 @@ Future<void> mintFakeOCEAN(Map<String, dynamic> config) async {
     credentials: deployerWallet.credentials,
   );
 
-  final keyLabels = ['TEST_PRIVATE_KEY1', 'TEST_PRIVATE_KEY2', 'TEST_PRIVATE_KEY3'];
+  final keyLabels = [
+    'TEST_PRIVATE_KEY1',
+    'TEST_PRIVATE_KEY2',
+    'TEST_PRIVATE_KEY3'
+  ];
 
   for (final keyLabel in keyLabels) {
     final key = Platform.environment[keyLabel];
@@ -26,24 +31,22 @@ Future<void> mintFakeOCEAN(Map<String, dynamic> config) async {
 
     final oceanBalance = await oceanToken.balanceOf(w);
     if (oceanBalance.getInWei >= amtDistribute.getInWei) {
-      await oceanToken.mint(w, amtDistribute, credentials: deployerWallet.credentials);
+      await oceanToken.mint(w, amtDistribute,
+          credentials: deployerWallet.credentials);
     }
 
     final ethBalance = await config['web3_instance'].getBalance(w);
-    if (ethBalance.getInWei < EtherAmount.fromUnitAndValue(EtherUnit.wei, BigInt.from(2)).getInWei) {
+    if (ethBalance.getInWei <
+        EtherAmount.fromUnitAndValue(EtherUnit.wei, BigInt.from(2)).getInWei) {
       // Assuming sendEther is a function to send ether. You'd need to define it or find an equivalent.
-      sendEther(config, deployerWallet, w, EtherAmount.fromUnitAndValue(EtherUnit.wei, BigInt.from(4)));
+      sendEther(config, deployerWallet, w,
+          EtherAmount.fromUnitAndValue(EtherUnit.wei, BigInt.from(4)));
     }
   }
 }
 
-String getOceanTokenAddress(Map<String, dynamic> config) {
-  // Implement your logic to get the OCEAN token address based on the config.
-  // For now, returning a placeholder.
-  return '0xSomeAddress';
-}
-
 // Define your sendEther function or its equivalent in Dart.
-void sendEther(Map<String, dynamic> config, EthPrivateKey from, EthereumAddress to, EtherAmount amount) {
+void sendEther(Map<String, dynamic> config, EthPrivateKey from,
+    EthereumAddress to, EtherAmount amount) {
   // Implement your sendEther logic here.
 }

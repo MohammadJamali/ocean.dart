@@ -1,19 +1,17 @@
 import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
-import 'package:logger/logger.dart';
 
 import '../assets/ddo/ddo.dart';
+import '../utils/logger.dart';
 
 class Aquarius {
   String baseUrl;
 
-  late final Logger logger;
   late final http.Client client;
 
   Aquarius(this.baseUrl) {
     client = http.Client();
-    logger = Logger(printer: PrettyPrinter());
   }
 
   static Future<Aquarius> getInstance(String baseUrl) async {
@@ -39,9 +37,9 @@ class Aquarius {
 
     baseUrl = '$baseUrl/api/aquarius/assets';
 
-    object.logger.d('Aquarius connected at $baseUrl');
-    object.logger.d('Aquarius API documentation at $baseUrl/api/v1/docs');
-    object.logger.d('Metadata assets (DDOs) at $baseUrl');
+    logger.d('Aquarius connected at $baseUrl');
+    logger.d('Aquarius API documentation at $baseUrl/api/v1/docs');
+    logger.d('Metadata assets (DDOs) at $baseUrl');
 
     return object;
   }
@@ -49,7 +47,7 @@ class Aquarius {
   Future<DDO?> getDdo(String did) async {
     final response = await client.get(Uri.parse('$baseUrl/ddo/$did'));
     if (response.statusCode == 200) {
-      return DDO.fromJson(json.decode(response.body));
+      return DDO.fromDict(json.decode(response.body));
     }
     return null;
   }

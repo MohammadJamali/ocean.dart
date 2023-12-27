@@ -14,16 +14,15 @@ T _$identity<T>(T value) => value;
 final _privateConstructorUsedError = UnsupportedError(
     'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
 
-AssetArguments _$AssetArgumentsFromJson(Map<String, dynamic> json) {
-  return _AssetArguments.fromJson(json);
+AssetArguments<T> _$AssetArgumentsFromJson<T>(Map<String, dynamic> json) {
+  return _AssetArguments<T>.fromJson(json);
 }
 
 /// @nodoc
-mixin _$AssetArguments {
+mixin _$AssetArguments<T> {
   bool get waitForAqua => throw _privateConstructorUsedError;
-  int get dtTemplateIndex => throw _privateConstructorUsedError;
-  PricingSchemaArgs? get pricingSchemaArgs =>
-      throw _privateConstructorUsedError; // Define this class based on the possible types (DispenserArguments, ExchangeArguments)
+  int? get dtTemplateIndex => throw _privateConstructorUsedError;
+  T? get pricingSchemaArgs => throw _privateConstructorUsedError;
   Map<String, dynamic>? get metadata => throw _privateConstructorUsedError;
   bool get withCompute => throw _privateConstructorUsedError;
   Map<String, dynamic>? get computeValues => throw _privateConstructorUsedError;
@@ -31,20 +30,20 @@ mixin _$AssetArguments {
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
-  $AssetArgumentsCopyWith<AssetArguments> get copyWith =>
+  $AssetArgumentsCopyWith<T, AssetArguments<T>> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class $AssetArgumentsCopyWith<$Res> {
+abstract class $AssetArgumentsCopyWith<T, $Res> {
   factory $AssetArgumentsCopyWith(
-          AssetArguments value, $Res Function(AssetArguments) then) =
-      _$AssetArgumentsCopyWithImpl<$Res, AssetArguments>;
+          AssetArguments<T> value, $Res Function(AssetArguments<T>) then) =
+      _$AssetArgumentsCopyWithImpl<T, $Res, AssetArguments<T>>;
   @useResult
   $Res call(
       {bool waitForAqua,
-      int dtTemplateIndex,
-      PricingSchemaArgs? pricingSchemaArgs,
+      int? dtTemplateIndex,
+      T? pricingSchemaArgs,
       Map<String, dynamic>? metadata,
       bool withCompute,
       Map<String, dynamic>? computeValues,
@@ -52,8 +51,8 @@ abstract class $AssetArgumentsCopyWith<$Res> {
 }
 
 /// @nodoc
-class _$AssetArgumentsCopyWithImpl<$Res, $Val extends AssetArguments>
-    implements $AssetArgumentsCopyWith<$Res> {
+class _$AssetArgumentsCopyWithImpl<T, $Res, $Val extends AssetArguments<T>>
+    implements $AssetArgumentsCopyWith<T, $Res> {
   _$AssetArgumentsCopyWithImpl(this._value, this._then);
 
   // ignore: unused_field
@@ -65,7 +64,7 @@ class _$AssetArgumentsCopyWithImpl<$Res, $Val extends AssetArguments>
   @override
   $Res call({
     Object? waitForAqua = null,
-    Object? dtTemplateIndex = null,
+    Object? dtTemplateIndex = freezed,
     Object? pricingSchemaArgs = freezed,
     Object? metadata = freezed,
     Object? withCompute = null,
@@ -77,14 +76,14 @@ class _$AssetArgumentsCopyWithImpl<$Res, $Val extends AssetArguments>
           ? _value.waitForAqua
           : waitForAqua // ignore: cast_nullable_to_non_nullable
               as bool,
-      dtTemplateIndex: null == dtTemplateIndex
+      dtTemplateIndex: freezed == dtTemplateIndex
           ? _value.dtTemplateIndex
           : dtTemplateIndex // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       pricingSchemaArgs: freezed == pricingSchemaArgs
           ? _value.pricingSchemaArgs
           : pricingSchemaArgs // ignore: cast_nullable_to_non_nullable
-              as PricingSchemaArgs?,
+              as T?,
       metadata: freezed == metadata
           ? _value.metadata
           : metadata // ignore: cast_nullable_to_non_nullable
@@ -106,17 +105,17 @@ class _$AssetArgumentsCopyWithImpl<$Res, $Val extends AssetArguments>
 }
 
 /// @nodoc
-abstract class _$$AssetArgumentsImplCopyWith<$Res>
-    implements $AssetArgumentsCopyWith<$Res> {
-  factory _$$AssetArgumentsImplCopyWith(_$AssetArgumentsImpl value,
-          $Res Function(_$AssetArgumentsImpl) then) =
-      __$$AssetArgumentsImplCopyWithImpl<$Res>;
+abstract class _$$AssetArgumentsImplCopyWith<T, $Res>
+    implements $AssetArgumentsCopyWith<T, $Res> {
+  factory _$$AssetArgumentsImplCopyWith(_$AssetArgumentsImpl<T> value,
+          $Res Function(_$AssetArgumentsImpl<T>) then) =
+      __$$AssetArgumentsImplCopyWithImpl<T, $Res>;
   @override
   @useResult
   $Res call(
       {bool waitForAqua,
-      int dtTemplateIndex,
-      PricingSchemaArgs? pricingSchemaArgs,
+      int? dtTemplateIndex,
+      T? pricingSchemaArgs,
       Map<String, dynamic>? metadata,
       bool withCompute,
       Map<String, dynamic>? computeValues,
@@ -124,37 +123,37 @@ abstract class _$$AssetArgumentsImplCopyWith<$Res>
 }
 
 /// @nodoc
-class __$$AssetArgumentsImplCopyWithImpl<$Res>
-    extends _$AssetArgumentsCopyWithImpl<$Res, _$AssetArgumentsImpl>
-    implements _$$AssetArgumentsImplCopyWith<$Res> {
-  __$$AssetArgumentsImplCopyWithImpl(
-      _$AssetArgumentsImpl _value, $Res Function(_$AssetArgumentsImpl) _then)
+class __$$AssetArgumentsImplCopyWithImpl<T, $Res>
+    extends _$AssetArgumentsCopyWithImpl<T, $Res, _$AssetArgumentsImpl<T>>
+    implements _$$AssetArgumentsImplCopyWith<T, $Res> {
+  __$$AssetArgumentsImplCopyWithImpl(_$AssetArgumentsImpl<T> _value,
+      $Res Function(_$AssetArgumentsImpl<T>) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
   @override
   $Res call({
     Object? waitForAqua = null,
-    Object? dtTemplateIndex = null,
+    Object? dtTemplateIndex = freezed,
     Object? pricingSchemaArgs = freezed,
     Object? metadata = freezed,
     Object? withCompute = null,
     Object? computeValues = freezed,
     Object? credentials = freezed,
   }) {
-    return _then(_$AssetArgumentsImpl(
+    return _then(_$AssetArgumentsImpl<T>(
       waitForAqua: null == waitForAqua
           ? _value.waitForAqua
           : waitForAqua // ignore: cast_nullable_to_non_nullable
               as bool,
-      dtTemplateIndex: null == dtTemplateIndex
+      dtTemplateIndex: freezed == dtTemplateIndex
           ? _value.dtTemplateIndex
           : dtTemplateIndex // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       pricingSchemaArgs: freezed == pricingSchemaArgs
           ? _value.pricingSchemaArgs
           : pricingSchemaArgs // ignore: cast_nullable_to_non_nullable
-              as PricingSchemaArgs?,
+              as T?,
       metadata: freezed == metadata
           ? _value._metadata
           : metadata // ignore: cast_nullable_to_non_nullable
@@ -177,8 +176,8 @@ class __$$AssetArgumentsImplCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$AssetArgumentsImpl implements _AssetArguments {
-  _$AssetArgumentsImpl(
+class _$AssetArgumentsImpl<T> implements _AssetArguments<T> {
+  const _$AssetArgumentsImpl(
       {this.waitForAqua = true,
       this.dtTemplateIndex = 1,
       this.pricingSchemaArgs,
@@ -198,12 +197,10 @@ class _$AssetArgumentsImpl implements _AssetArguments {
   final bool waitForAqua;
   @override
   @JsonKey()
-  final int dtTemplateIndex;
+  final int? dtTemplateIndex;
   @override
-  final PricingSchemaArgs? pricingSchemaArgs;
-// Define this class based on the possible types (DispenserArguments, ExchangeArguments)
+  final T? pricingSchemaArgs;
   final Map<String, dynamic>? _metadata;
-// Define this class based on the possible types (DispenserArguments, ExchangeArguments)
   @override
   Map<String, dynamic>? get metadata {
     final value = _metadata;
@@ -238,14 +235,14 @@ class _$AssetArgumentsImpl implements _AssetArguments {
 
   @override
   String toString() {
-    return 'AssetArguments(waitForAqua: $waitForAqua, dtTemplateIndex: $dtTemplateIndex, pricingSchemaArgs: $pricingSchemaArgs, metadata: $metadata, withCompute: $withCompute, computeValues: $computeValues, credentials: $credentials)';
+    return 'AssetArguments<$T>(waitForAqua: $waitForAqua, dtTemplateIndex: $dtTemplateIndex, pricingSchemaArgs: $pricingSchemaArgs, metadata: $metadata, withCompute: $withCompute, computeValues: $computeValues, credentials: $credentials)';
   }
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$AssetArgumentsImpl &&
+            other is _$AssetArgumentsImpl<T> &&
             (identical(other.waitForAqua, waitForAqua) ||
                 other.waitForAqua == waitForAqua) &&
             (identical(other.dtTemplateIndex, dtTemplateIndex) ||
@@ -276,38 +273,38 @@ class _$AssetArgumentsImpl implements _AssetArguments {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$AssetArgumentsImplCopyWith<_$AssetArgumentsImpl> get copyWith =>
-      __$$AssetArgumentsImplCopyWithImpl<_$AssetArgumentsImpl>(
+  _$$AssetArgumentsImplCopyWith<T, _$AssetArgumentsImpl<T>> get copyWith =>
+      __$$AssetArgumentsImplCopyWithImpl<T, _$AssetArgumentsImpl<T>>(
           this, _$identity);
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$AssetArgumentsImplToJson(
+    return _$$AssetArgumentsImplToJson<T>(
       this,
     );
   }
 }
 
-abstract class _AssetArguments implements AssetArguments {
-  factory _AssetArguments(
+abstract class _AssetArguments<T> implements AssetArguments<T> {
+  const factory _AssetArguments(
       {final bool waitForAqua,
-      final int dtTemplateIndex,
-      final PricingSchemaArgs? pricingSchemaArgs,
+      final int? dtTemplateIndex,
+      final T? pricingSchemaArgs,
       final Map<String, dynamic>? metadata,
       final bool withCompute,
       final Map<String, dynamic>? computeValues,
-      final Map<String, dynamic>? credentials}) = _$AssetArgumentsImpl;
+      final Map<String, dynamic>? credentials}) = _$AssetArgumentsImpl<T>;
 
   factory _AssetArguments.fromJson(Map<String, dynamic> json) =
-      _$AssetArgumentsImpl.fromJson;
+      _$AssetArgumentsImpl<T>.fromJson;
 
   @override
   bool get waitForAqua;
   @override
-  int get dtTemplateIndex;
+  int? get dtTemplateIndex;
   @override
-  PricingSchemaArgs? get pricingSchemaArgs;
-  @override // Define this class based on the possible types (DispenserArguments, ExchangeArguments)
+  T? get pricingSchemaArgs;
+  @override
   Map<String, dynamic>? get metadata;
   @override
   bool get withCompute;
@@ -317,6 +314,6 @@ abstract class _AssetArguments implements AssetArguments {
   Map<String, dynamic>? get credentials;
   @override
   @JsonKey(ignore: true)
-  _$$AssetArgumentsImplCopyWith<_$AssetArgumentsImpl> get copyWith =>
+  _$$AssetArgumentsImplCopyWith<T, _$AssetArgumentsImpl<T>> get copyWith =>
       throw _privateConstructorUsedError;
 }

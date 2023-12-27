@@ -1,11 +1,23 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:crypto/crypto.dart';
+import 'package:web3dart/web3dart.dart';
+
 import '../../aquarius/aquarius.dart';
+import '../../assets/asset_downloader.dart';
 import '../../assets/ddo/ddo.dart';
-import 'data_nft_factory_contract.dart';
-import 'config.dart'; // assuming this is a package based on the context
-import 'logger.dart'; // assuming we have a logger package
+import '../../data_provider/data_encryptor.dart';
+import '../../models/compute_input.dart';
+import '../../models/data_nft.dart';
+import '../../models/data_nft_factory.dart';
+import '../../models/datatoken_base.dart';
+import '../../models/exception/aquarius_error.dart';
+import '../../services/service.dart';
+import '../../structures/file_objects.dart';
+import '../../utils/logger.dart';
+import '../../web3_internal/constants.dart';
+import 'asset_arguments.dart';
 
 class OceanAssets {
   final Config _config;
@@ -36,7 +48,7 @@ class OceanAssets {
     var validation = await _aquarius.validateDdo(ddo);
     if (!validation.isValid) {
       var msg = 'DDO has validation errors: ${validation.errors}';
-      Logger.error(msg);
+      logger.e(msg);
       throw FormatException(msg);
     }
 
@@ -342,10 +354,10 @@ class OceanAssets {
       dataNftArgs ??= DataNFTArguments(metadata["name"], metadata["name"]);
       dataNft = dataNftArgs.deployContract(_configDict, txDict);
       if (dataNft == null) {
-        Logger.warning("Creating new NFT failed.");
+        logger.w("Creating new NFT failed.");
         return null;
       }
-      Logger.info("Successfully created NFT with address ${dataNft.address}.");
+      logger.i("Successfully created NFT with address ${dataNft.address}.");
     } else {
       dataNft = DataNFT(_configDict, dataNftAddress);
     }
@@ -376,14 +388,14 @@ class OceanAssets {
     } else {
       datatokens = deployedDatatokens;
       if (services.isEmpty) {
-        Logger.warning("Services required with deployedDatatokens.");
+        logger.w("Services required with deployedDatatokens.");
         return null;
       }
 
       List<String> dtAddresses = [];
       for (var datatoken in datatokens) {
         if (!dataNft.getTokensList().contains(datatoken.address)) {
-          Logger.warning("Some deployedDatatokens don't belong to the given data NFT.");
+          logger.w("Some deployedDatatokens don't belong to the given data NFT.");
           return null;
         }
         dtAddresses.add(datatoken.address);
@@ -391,7 +403,7 @@ class OceanAssets {
 
       for (var service in services) {
         if (!dtAddresses.contains(service.datatoken)) {
-          Logger.warning("Datatoken services mismatch.");
+          logger.w("Datatoken services mismatch.");
           return null;
         }
         ddo.addService(service);
@@ -453,7 +465,7 @@ class OceanAssets {
     var validation = validate(ddo);
     if (!validation.item1) {
       var msg = "DDO has validation errors: ${validation.item2}";
-      Logger.error(msg);
+      logger.e(msg);
       throw ValueError(msg);
     }
 
@@ -487,7 +499,7 @@ class OceanAssets {
   }
 
   List<DDO> search(String text) {
-    Logger.info("Search for DDOs containing text: $text");
+    logger.i("Search for DDOs containing text: $text");
     var processedText = text.replaceAll(':', r'\:').replaceAll(r'\\:', r'\:');
     var response = _aquarius.querySearch({
       "query": {
@@ -503,7 +515,7 @@ class OceanAssets {
   }
 
   List<DDO> query(Map query) {
-    Logger.info("Search for DDOs matching query: $query");
+    logger.i("Search for DDOs matching query: $query");
     var response = _aquarius.querySearch(query);
 
     return [

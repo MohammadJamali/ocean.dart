@@ -22,19 +22,20 @@ class DataEncryptor extends DataServiceProviderBase {
       throw ArgumentError('Unsupported type for objectsToEncrypt');
     }
 
-    var endpoint = buildEndpoint('encrypt', providerUri, {'chainId': chainId});
+    var method,
+        url = buildEndpoint('encrypt', providerUri, {'chainId': chainId});
     var response = await httpMethod(
-      endpoint.item1,
-      endpoint.item2,
+      method,
+      url,
       data: payload,
       headers: {'Content-type': 'application/octet-stream'},
     );
 
-    checkResponse(response, 'encryptEndpoint', endpoint.item2, payload, [201],
+    checkResponse(response, 'encryptEndpoint', url, payload, [201],
         OceanEncryptAssetUrlsError);
 
     print(
-        'Asset urls encrypted successfully, encrypted urls str: ${response.body}, encryptedEndpoint ${endpoint.item2}');
+        'Asset urls encrypted successfully, encrypted urls str: ${response.body}, encryptedEndpoint $url');
 
     return response;
   }
